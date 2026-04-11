@@ -1,0 +1,8 @@
+[alembic]
+script_location = database
+prepend_sys_path = .
+truncate_slug_length = 40
+version_locations = database/migrations
+version_path_separator = os
+output_encoding = utf-8
+revision_environment = True
