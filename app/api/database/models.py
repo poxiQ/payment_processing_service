@@ -5,8 +5,15 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import (
-    DateTime, Enum, ForeignKey, Numeric,
-    String, Text, func, JSON, Boolean
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    Text,
+    func,
+    JSON,
+    Boolean,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,12 +32,23 @@ class Payment(BaseModel):
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     currency: Mapped[PaymentCurrency] = mapped_column(
-        Enum(PaymentCurrency, name="currency_enum", values_callable=lambda objects: [o.value for o in objects]), nullable=False
+        Enum(
+            PaymentCurrency,
+            name="currency_enum",
+            values_callable=lambda objects: [o.value for o in objects],
+        ),
+        nullable=False,
     )
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    payment_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+    payment_metadata: Mapped[dict | None] = mapped_column(
+        "metadata", JSON, nullable=True
+    )
     status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus, name="payment_status_enum", values_callable=lambda objects: [o.value for o in objects]),
+        Enum(
+            PaymentStatus,
+            name="payment_status_enum",
+            values_callable=lambda objects: [o.value for o in objects],
+        ),
         nullable=False,
         default=PaymentStatus.PENDING.value,
     )
@@ -67,7 +85,12 @@ class OutboxEvent(BaseModel):
     )
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
-    published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True,)
+    published: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

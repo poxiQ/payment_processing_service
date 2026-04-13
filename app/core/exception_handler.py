@@ -10,7 +10,7 @@ from core.config import settings
 
 common_responses = {
     status.HTTP_401_UNAUTHORIZED: {"model": ErrorResponse},
-    status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": ErrorResponse},
+    status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": ErrorResponse},
     status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": ErrorResponse},
 }
 
@@ -39,7 +39,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     Handling error in validating requests
     """
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content=get_error_response(request=request, exc=exc),
     )
 

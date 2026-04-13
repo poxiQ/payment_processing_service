@@ -40,7 +40,9 @@ target_metadata = BaseModel.metadata
 
 def run_migrations_offline() -> None:
     if settings.TESTING:
-        raise DatabaseError("Running testing migrations offline currently not permitted.")
+        raise DatabaseError(
+            "Running testing migrations offline currently not permitted."
+        )
 
     url = config.get_main_option("sqlalchemy.url")
     context.configure(

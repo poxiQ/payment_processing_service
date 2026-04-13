@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Any
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic.dataclasses import dataclass
 
 from api.enums import PaymentStatus, PaymentCurrency
 
@@ -44,7 +45,26 @@ class GetPaymentResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class ErrorResponse(BaseModel):
-    error: bool = Field(...,)
-    message: str = Field(...,)
-    traceback: str = Field(None,)
+    error: bool = Field(
+        ...,
+    )
+    message: str = Field(
+        ...,
+    )
+    traceback: str = Field(
+        None,
+    )
+
+
+@dataclass
+class GetDeploymentInformationResponse:
+    python_version: str = Field(
+        default=None,
+        title="Версия python",
+        description="Версия python",
+        examples=[
+            "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+        ],
+    )
