@@ -35,5 +35,5 @@ def get_deployment_information() -> JSONResponse:
     name="general:check",
 )
 async def healthcheck() -> PlainTextResponse:
-    async with aiofiles.open("/commit.txt", mode="r") as f:
+    async with aiofiles.open("commit.txt", mode="r") as f:
         return PlainTextResponse(status_code=status.HTTP_200_OK, content=await f.read())

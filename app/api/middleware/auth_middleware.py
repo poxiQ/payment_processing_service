@@ -17,7 +17,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Any:
         x_api_key = request.headers.get("X-API-Key")
         path = request.url.path
-        print(path)
         if path not in self.blacklist_urls and x_api_key != settings.API_KEY:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
