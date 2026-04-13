@@ -9,7 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.database.db import get_session
 from api.database.models import Payment, OutboxEvent
 from api.enums import PaymentStatus
-from api.schemas import CreatePaymentResponse, CreatePaymentRequest, ErrorResponse, GetPaymentResponse
+from api.schemas import (
+    CreatePaymentResponse,
+    CreatePaymentRequest,
+    ErrorResponse,
+    GetPaymentResponse,
+)
 from core.config import settings
 from core.exception_handler import common_responses
 
@@ -23,7 +28,7 @@ payments_router = APIRouter(
     "",
     name="payments:create_payment",
     response_model=CreatePaymentResponse,
-responses={
+    responses={
         **common_responses,
         status.HTTP_400_BAD_REQUEST: {"model": ErrorResponse},
     },
@@ -31,9 +36,9 @@ responses={
     summary="Create a new payment",
 )
 async def create_payment(
-        request_data: CreatePaymentRequest,
-        idempotency_key: Annotated[str, Header(alias="Idempotency-Key")],
-        session: AsyncSession = Depends(get_session),
+    request_data: CreatePaymentRequest,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key")],
+    session: AsyncSession = Depends(get_session),
 ) -> CreatePaymentResponse:
     existing = await session.scalar(
         select(Payment).where(Payment.idempotency_key == idempotency_key)

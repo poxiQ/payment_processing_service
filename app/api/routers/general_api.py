@@ -2,12 +2,14 @@
 import sys
 
 import aiofiles
+
 from core.config import settings
-from exception_handler import common_responses
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
-from schemas.general_schemas import GetDeploymentInformationResponse
 from starlette.responses import PlainTextResponse
+
+from api.schemas import GetDeploymentInformationResponse
+from core.exception_handler import common_responses
 
 general_router = APIRouter(
     prefix=f"{settings.API_PREFIX}/general",
