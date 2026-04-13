@@ -70,7 +70,40 @@ services:
       sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${BACKEND_PORT:-8080}"
     networks:
       - payment_net_internal
-      - payment_net
+
+  outbox_publisher:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+      target: worker
+    container_name: payments_outbox_publisher
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: python -m broker.outbox_publisher
+    networks:
+      - payment_net_internal
+
+  consumer:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+      target: worker
+    container_name: payments_consumer
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: python -m broker.consumer
+    networks:
+      - payment_net_internal
 
 volumes:
   postgres_data:
@@ -102,7 +135,4 @@ volumes:
 networks:
   payment_net_internal:
     name: payment_net_internal_local
-    external: false
-  payment_net:
-    name: payment_net_dev
     external: false

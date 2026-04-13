@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import logging
-from typing import ClassVar, Union
 
 from pydantic import ConfigDict, SecretStr
 from pydantic_settings import BaseSettings
@@ -18,13 +17,22 @@ class RequestContentFilter(logging.Filter):
 
 
 class PostgresSettings(BaseSettings):
-    USER: str = "postgres"
-    PASSWORD: SecretStr = "postgres"
-    HOST: str = "localhost"
-    PORT: int = 5432
-    DB: str = "payment"
+    USER: str
+    PASSWORD: SecretStr
+    HOST: str
+    PORT: int
+    DB: str
 
     model_config = ConfigDict(env_prefix="POSTGRES_")
+
+
+class RabbitMQSettings(BaseSettings):
+    DEFAULT_USER: str
+    DEFAULT_PASS: SecretStr
+    HOST: str
+    PORT: int
+
+    model_config = ConfigDict(env_prefix="RABBITMQ_")
 
 
 class Settings(BaseSettings):
@@ -33,14 +41,16 @@ class Settings(BaseSettings):
         "User-Agent": "Payment App Python/httpx",
     }
     API_PREFIX: str = "/api/v1"
+    API_KEY: str
 
     TESTING: bool = False
     DEBUG: bool = False
 
     POSTGRES: PostgresSettings = PostgresSettings()
+    RABBITMQ: RabbitMQSettings = RabbitMQSettings()
     PROD_DB_URL: str = f"postgresql+asyncpg://{POSTGRES.USER}:{POSTGRES.PASSWORD.get_secret_value()}@{POSTGRES.HOST}:{POSTGRES.PORT}/{POSTGRES.DB}"
     TEST_DB_URL: str = f"{PROD_DB_URL}_test"
-
+    RABBITMQ_URL: str = f"amqp://{RABBITMQ.DEFAULT_USER}:{RABBITMQ.DEFAULT_PASS.get_secret_value()}@{RABBITMQ.HOST}:{RABBITMQ.PORT}"
 
 
 settings = Settings()
