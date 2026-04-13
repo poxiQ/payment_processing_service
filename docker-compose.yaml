@@ -1,0 +1,138 @@
+services:
+  postgres:
+    image: postgres:16.8-alpine
+    container_name: payments_postgres
+    restart: always
+    env_file:
+      - .env
+    expose:
+      - "${POSTGRES_PORT:-5432}"
+    command: >
+      postgres
+      -c logging_collector=on
+      -c log_destination=stderr
+      -c log_directory=${POSTGRES_LOGS_PATH:-/var/lib/postgresql/logs}
+    volumes:
+      - postgres_data:${POSTGRES_DATA_PATH:-/var/lib/postgresql/data}
+      - postgres_logs:${POSTGRES_LOGS_PATH:-/var/lib/postgresql/logs}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - payment_net_internal
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: payments_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-rabbit_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-rabbit_secret}
+    volumes:
+      - rabbitmq_data:${RABBIT_DATA_PATH:-/var/lib/rabbitmq}
+      - rabbitmq_logs:${RABBIT_LOGS_PATH:-/var/log/rabbitmq}
+    ports:
+      - "${RABBIT_PORT:-5672}:${RABBIT_PORT:-5672}"
+      - "${RABBIT_WEB_PORT:-15672}:${RABBIT_WEB_PORT:-15672}"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - payment_net_internal
+
+  backend:
+    image: payment_backend:local
+    container_name: payment_backend
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "64m"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8080}:${BACKEND_PORT:-8080}"
+    volumes:
+      - ./app:/app
+      - ./Makefile:/Makefile
+      - ./logs:/app/logs
+    entrypoint: >
+      sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${BACKEND_PORT:-8080}"
+    networks:
+      - payment_net_internal
+
+  outbox_publisher:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+      target: worker
+    container_name: payments_outbox_publisher
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: python -m broker.outbox_publisher
+    networks:
+      - payment_net_internal
+
+  consumer:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+      target: worker
+    container_name: payments_consumer
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: python -m broker.consumer
+    networks:
+      - payment_net_internal
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: ${POSTGRES_DATA_PATH:-/var/lib/postgresql/data}
+  postgres_logs:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: ${POSTGRES_LOGS_PATH:-/var/lib/postgresql/logs}
+  rabbitmq_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: ${RABBIT_DATA_PATH:-/var/lib/rabbitmq}
+  rabbitmq_logs:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: ${RABBIT_LOGS_PATH:-/var/log/rabbitmq}
+
+
+networks:
+  payment_net_internal:
+    name: payment_net_internal_local
+    external: false
